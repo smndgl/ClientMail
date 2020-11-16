@@ -1,0 +1,2 @@
+1###sender1@send.it###rec1@rec.it, rec2@rec.it###SUBJECT1###ciao, mi chiamo sender1 e nulla ti ho mandato una mail :)### 01/01/1990 21:54
+2###sender2@send.it###rec1@rec.it, rec2@rec.it###SUBJECT2###ciao, mi chiamo sender2 e nulla ti ho mandato una mail :)### 01/02/1990 22:56
