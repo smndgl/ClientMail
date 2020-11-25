@@ -7,7 +7,7 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane prefHeight="550.0" prefWidth="440.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.EditorController">
+<AnchorPane prefHeight="550.0" prefWidth="440.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.EditorController">
    <children>
            <Label layoutX="24.0" layoutY="17.0" text="From: " />
            <Label fx:id="lblSender" layoutX="94.0" layoutY="17.0" text="..." />

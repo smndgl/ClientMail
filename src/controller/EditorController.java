@@ -1,19 +1,10 @@
-package sample;
+package controller;
 
-import com.sun.javafx.binding.StringFormatter;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.util.Callback;
-import javafx.util.StringConverter;
+import model.DataModel;
+import model.Email;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -46,21 +37,13 @@ public class EditorController {
     @FXML
     private Button btnNew;
 
-    public void initModel(DataModel model) {
-        ChangeListener<Email> emailChangeListener = new ChangeListener<Email>() {
-            @Override
-            public void changed(ObservableValue<? extends Email> observableValue, Email oldEmail, Email newEmail) {
-                if(newEmail != null) {
-                    unBindEditor();
-                    lblSender.textProperty().bind(newEmail.senderProperty());
-                    txtSubject.textProperty().bind(newEmail.subjectProperty());
-                    txtRecipients.textProperty().bind(new SimpleStringProperty(newEmail.getRecipient().toString().substring(1,newEmail.getRecipient().toString().length() - 1)));
-                    txtAreaMailText.textProperty().bind(newEmail.textProperty());
-                    lblDebugId.textProperty().bind(newEmail.idProperty().asString());
-                }
-            }
-        };
+    private DataModel model;
 
+    public void initModel(DataModel model) {
+        if (this.model != null) {
+            throw new IllegalStateException("Model can only be initialized once");
+        }
+        this.model = model;
         //<editor-fold desc="start settings">
             //appena avviato ho i controlli disabilitati, i bottoni anche perchè altrimenti non sanno che prendere
             //l'unico bottone che va è new
@@ -71,7 +54,18 @@ public class EditorController {
         //</editor-fold>
 
         // <editor-fold desc="CurrentEmailChangeListener">
-        model.currentEmailProperty().addListener(emailChangeListener);
+        model.currentEmailProperty().addListener((obs, oldEmail, newEmail) -> {
+            if(newEmail == null) {
+                unBindEditor();
+            }
+            else {
+                lblSender.setText(newEmail.getSender());
+                txtSubject.setText(newEmail.getSubject());
+                txtRecipients.setText(newEmail.getRecipientAsString());
+                txtAreaMailText.setText(newEmail.getText());
+                lblDebugId.setText(Integer.toString(newEmail.getId()));
+            }
+        });
         model.currentEmailProperty().addListener(observable -> {
             controlsOff();
             buttonsOn();
@@ -82,7 +76,7 @@ public class EditorController {
         btnReply.setOnAction(actionEvent -> {
             model.setCurrentEmail(new Email(
                     model.getLastEmaild(),
-                    model.getCurrentAccount().getAccountName(),
+                    model.getUsername(),
                     new ArrayList<String>(Arrays.asList(model.getCurrentEmail().getSender().split(" "))),
                     "RE: "+ model.getCurrentEmail().getSubject(),
                     "",
@@ -96,12 +90,12 @@ public class EditorController {
             ArrayList<String> newRecipients = new ArrayList<>();
             newRecipients.add(model.getCurrentEmail().getSender());
             for (String item : model.getCurrentEmail().getRecipient()) {
-                if(!(item.equals(model.getCurrentAccount().getAccountName())))
+                if(!(item.equals(model.getUsername())))
                     newRecipients.add(item);
             };
             model.setCurrentEmail(new Email(
                     model.getLastEmaild(),
-                    model.getCurrentAccount().getAccountName(),
+                    model.getUsername(),
                     newRecipients,
                     "RE: "+ model.getCurrentEmail().getSubject(),
                     "",
@@ -114,7 +108,7 @@ public class EditorController {
         btnForward.setOnAction(actionEvent -> {
             model.setCurrentEmail(new Email(
                     model.getLastEmaild(),
-                    model.getCurrentAccount().getAccountName(),
+                    model.getUsername(),
                     new ArrayList<String>(),
                     "FW: "+ model.getCurrentEmail().getSubject(),
                     model.getCurrentEmail().getText(),
@@ -129,7 +123,7 @@ public class EditorController {
         btnNew.setOnAction(actionEvent -> {
             model.setCurrentEmail(new Email(
                     model.getLastEmaild(),
-                    model.getCurrentAccount().getAccountName(),
+                    model.getUsername(),
                     new ArrayList<String>(),
                     "",
                     "",
@@ -141,20 +135,15 @@ public class EditorController {
 
         //sure about it
         btnDelete.setOnAction(actionEvent -> {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("");
-            alert.setContentText("Are you sure?");
-            ButtonType okButton = new ButtonType("Yes", ButtonBar.ButtonData.YES);
-            ButtonType noButton = new ButtonType("No", ButtonBar.ButtonData.NO);
-            ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-            alert.getButtonTypes().setAll(okButton, noButton, cancelButton);
-            alert.showAndWait().ifPresent(type -> {
-                if (type == ButtonType.OK) {
-                    // TODO
-                    // richiamo il model per eliminare la mail --> sposto mail da inbox/sent a bin
-                    // eventualmente setto la mailbox a bin ?
-                }
-            });
+            // TODO mandare al server messaggio tipo delete
+        });
+
+        btnSend.setOnAction(actionEvent -> {
+            /* TODO
+                * controllo campi
+                * inserisco id per sentlist del mittente
+                * creo messaggio e mando al socket
+            */
         });
 
         //</editor-fold>

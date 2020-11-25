@@ -1,26 +1,30 @@
-package sample;
+package controller;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.util.StringConverter;
+import model.*;
 
-import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Type;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class MenuController {
     private final String PATH_TO_ACCOUNT_LIST = System.getProperty("user.dir")+"/files/accountlist.txt";
-    private final String INBOX_FILTER = "-inboxlist";
-    private final String SENT_FILTER = "-sentlist";
-    private final String BIN_FILTER = "-binlist";
+    private final String INBOX_FILTER = "INBOX";
+    private final String SENT_FILTER = "SENT";
     /*
      *  COMPONENTS
      */
-    @FXML
-    private ComboBox<Account> cmbUsername;
 
     /*
      * menu
@@ -31,13 +35,10 @@ public class MenuController {
     private MenuItem menuItemInbox;
     @FXML
     private MenuItem menuItemSent;
-    @FXML
-    private MenuItem menuItemBin;
 
     /*
      * table view
      */
-
     @FXML
     private TableView<Email> tableViewMails;
     @FXML
@@ -55,41 +56,6 @@ public class MenuController {
             throw new IllegalStateException("Model can only be initialized once");
         }
         this.model = model;
-
-        //<editor-fold desc="cmbUsernames">
-        StringConverter<Account> converter = new StringConverter<Account>() {
-            @Override
-            public String toString(Account account) {
-                return account.getAccountName();
-            }
-            @Override
-            public Account fromString(String string) {
-                return null;
-            }
-        };
-        cmbUsername.setConverter(converter);
-
-        model.loadAccountList(new File(PATH_TO_ACCOUNT_LIST));
-        cmbUsername.setItems(model.getAccountlist());
-
-        cmbUsername.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) ->
-                model.setCurrentAccount(newSel));
-
-        model.currentAccountProperty().addListener((obs, oldAccount, NewAccount) ->
-                cmbUsername.getSelectionModel().select(NewAccount));
-
-        cmbUsername.getSelectionModel().selectFirst();
-
-        //listener per cambiare la view a seconda dell'elemento selezionato (BOOOOM)
-        // binding dinamico lista email a seconda dell'utente selezionato nella combobox
-        model.currentAccountProperty().addListener((obs, oldAc, newAc) -> {
-            //richiamo mailLoader
-            //TODO gestire cambio utente
-        });
-
-
-        //</editor-fold>
-
 
         //<editor-fold desc="tableViewMails">
         // sort on column header click disabled
@@ -110,10 +76,27 @@ public class MenuController {
 
         columnSender.setCellValueFactory(new PropertyValueFactory<String, String>("sender"));
 
-        // choosen mailbox set { inbox, sent, bin }
+        // choosen mailbox set { inbox, sent }
         model.listFilterProperty().addListener((obs, oldFilter, newFilter) -> {
-                model.loadMailList();
-                tableViewMails.setItems(model.getMailList());
+            Connection connection = model.getConnectionInstance();
+            try {
+                connection.fetchMailbox(model.getListFilter());
+                Message m = connection.getMessage();
+                if(m.getContent() instanceof String) {
+                    Type type = new TypeToken<Collection<Email>>(){}.getType();
+                    model.setMailList(new Gson().fromJson((String)m.getContent(), type));
+                    //set atomic int
+                    model.setLastEmailId(model.getMailList().get(model.getMailList().size()-1).getId());
+                }
+            }
+            catch (IOException | JsonSyntaxException e) {
+                e.printStackTrace();
+            }
+            catch (NullPointerException e) {
+                System.out.println("connesione morta ihihihi");
+                // TODO avvisare che la connesione è morta
+            }
+            tableViewMails.setItems(model.getMailList());
         });
 
         menuItemInbox.setOnAction(actionEvent -> {
@@ -124,11 +107,6 @@ public class MenuController {
         menuItemSent.setOnAction(actionEvent -> {
             menuBtnMailBox.setText("Sent");
             model.setListFilter(SENT_FILTER);
-        });
-
-        menuItemBin.setOnAction(actionEvent -> {
-            menuBtnMailBox.setText("Bin");
-            model.setListFilter(BIN_FILTER);
         });
 
         // fill editor with choosen email, readonly mode
@@ -143,6 +121,10 @@ public class MenuController {
 
         // inbox loaded as default mailbox when application starts
         menuItemInbox.fire();
+
+        //</editor-fold>
+
+        //<editor-fold>
 
         //</editor-fold>
     }
