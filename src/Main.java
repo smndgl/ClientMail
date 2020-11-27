@@ -7,10 +7,10 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import model.DataModel;
 import model.Message;
+import task.Sync;
 
 import java.io.IOException;
 import java.util.Scanner;
-import java.util.regex.Pattern;
 
 public class Main extends Application {
 
@@ -26,37 +26,49 @@ public class Main extends Application {
         root.setCenter(listMailLoader.load());
         EditorController listMailController = listMailLoader.getController();
 
-        // model initialize
         DataModel model = new DataModel();
 
         // TODO creare custom dialog
         String username;
-        do {
-            System.out.println("Choose username: ");
-            Scanner scanner = new Scanner(System.in);
-            username = scanner.nextLine();
-        } while (!model.checkEmail(username));
-        model.setUsername(username);
-        model.initConnection();
-        try {
-            model.getConnectionInstance().login(model.getUsername());
-            Message obj = model.getConnectionInstance().getMessage();
-            if(obj.getContent() instanceof Boolean) {
-                if((Boolean) obj.getContent()) {
-                    primaryStage.setTitle(username);
-                    model.setUsername(username);
-                }
-                else {
-                    System.err.println("Error invalid username");
-                    System.exit(0);
-                }
-            }
-        }
-        catch(IOException e) {
-            e.printStackTrace();
-        }
 
-        // TODO evento chiusura finestra mandare messaggio al server che rimuove dalla memoria virtuale la mailbox di questo utente.
+        model.initConnection(); // TODO SI INLOOOOOOPPPPAAAA
+        Sync sync = new Sync(model);
+        Boolean res = true;
+        do {
+            do {
+                System.out.println("Choose username: ");
+                Scanner scanner = new Scanner(System.in);
+                username = scanner.nextLine();
+            } while (!model.checkMailAccount(username));
+
+            model.setUsername(username);
+            try {
+                model.getConnectionInstance().login(model.getUsername());
+                Message obj = model.getConnectionInstance().getMessage();
+                res = (Boolean) obj.getContent();
+                if (obj.getContent() instanceof Boolean) {
+                    if (res) {
+                        primaryStage.setTitle(username);
+                        model.setUsername(username);
+                        sync.fetchAll();
+                        new Thread(sync).start();
+                    }
+                    else {
+                        System.out.println("Error invalid username");
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } // ask for inbox and sent
+        } while (!res); //eheheh
+        primaryStage.setOnCloseRequest(windowEvent -> {
+            sync.setInterrupted(true); //stop polling request for new emails
+            try {
+                model.getConnectionInstance().logout(model.getUsername());
+            } catch (IOException e) {
+                System.err.println("Error on closing event: "+ e.getMessage());
+            }
+        });
 
         listMailController.initModel(model);
         menuController.initModel(model);
