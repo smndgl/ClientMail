@@ -1,27 +1,20 @@
 package controller;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
-import com.google.gson.reflect.TypeToken;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.ListChangeListener;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import model.*;
 
-import java.io.IOException;
-import java.lang.reflect.Type;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 public class MenuController {
     private final String PATH_TO_ACCOUNT_LIST = System.getProperty("user.dir")+"/files/accountlist.txt";
-    private final String INBOX_FILTER = "INBOX";
-    private final String SENT_FILTER = "SENT";
+    private final String INBOX_FILTER = "inbox";
+    private final String SENT_FILTER = "sent";
     /*
      *  COMPONENTS
      */
@@ -78,25 +71,19 @@ public class MenuController {
 
         // choosen mailbox set { inbox, sent }
         model.listFilterProperty().addListener((obs, oldFilter, newFilter) -> {
-            Connection connection = model.getConnectionInstance();
-            try {
-                connection.fetchMailbox(model.getListFilter());
-                Message m = connection.getMessage();
-                if(m.getContent() instanceof String) {
-                    Type type = new TypeToken<Collection<Email>>(){}.getType();
-                    model.setMailList(new Gson().fromJson((String)m.getContent(), type));
-                    //set atomic int
-                    model.setLastEmailId(model.getMailList().get(model.getMailList().size()-1).getId());
-                }
+            if(newFilter.equals(INBOX_FILTER)) {
+                model.setMailList(model.Inbox());
             }
-            catch (IOException | JsonSyntaxException e) {
-                e.printStackTrace();
+            else if(newFilter.equals(SENT_FILTER)) {
+                model.setMailList(model.Sent());
             }
-            catch (NullPointerException e) {
-                System.out.println("connesione morta ihihihi");
-                // TODO avvisare che la connesione è morta
+            else {
+                System.out.println("HOW ?!");
             }
+            //setto ultimo id
+            model.setNextEmailId(model.getMailList().get(model.getMailList().size()-1).getId());
             tableViewMails.setItems(model.getMailList());
+            tableViewMails.getSelectionModel().selectFirst();
         });
 
         menuItemInbox.setOnAction(actionEvent -> {
@@ -117,6 +104,10 @@ public class MenuController {
         // re-select email when already highlighted
         tableViewMails.focusedProperty().addListener((obs, oldSel, newSel) -> {
             model.setCurrentEmail(tableViewMails.getSelectionModel().getSelectedItem());
+        });
+
+        model.getMailList().addListener((ListChangeListener<Email>) change -> {
+            tableViewMails.setItems(model.getMailList());
         });
 
         // inbox loaded as default mailbox when application starts
