@@ -2,8 +2,10 @@ package model;
 
 public enum  MessageType {
     send,
-    delete,
+    delete_i,
+    delete_s,
     sync,
     login,
+    logout,
     fetch
 }
