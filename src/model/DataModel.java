@@ -1,17 +1,15 @@
 package model;
 
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import javafx.beans.Observable;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 import java.io.*;
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 public class DataModel {
@@ -23,6 +21,12 @@ public class DataModel {
 
     public String getUsername() {
         return this.username;
+    }
+
+    public IntegerProperty refreshProperty = new SimpleIntegerProperty(0);
+
+    public void incrementRefresh() {
+        refreshProperty.set(refreshProperty.get() + 1);
     }
 
     //<editor-fold desc="Connection">
@@ -49,25 +53,58 @@ public class DataModel {
     //</editor-fold>
 
     //<editor-fold desc="LastEmailId">
-    private final AtomicInteger lastEmailId = new AtomicInteger(1);
+    private final AtomicInteger nextEmailId = new AtomicInteger(1);
 
-    public void setLastEmailId(int value) {
-        lastEmailId.addAndGet(value);
+    public void setNextEmailId(int value) {
+        nextEmailId.set(value+1);
     }
 
-    public int getLastEmaild() {
-        return lastEmailId.get();
+    public int getNextEmaild() {
+        return nextEmailId.get();
     }
 
-    public void incrementLastEmailId() {
-        lastEmailId.incrementAndGet();
+    public void incrementNextEmailId() {
+        nextEmailId.incrementAndGet();
     }
     //</editor-fold>
 
-    public Boolean checkEmail(String username) {
-        return Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE)
-                .matcher(username).find();
+    //<editor-fold desc="inbox and sent lists in runtime memory">
+    private ArrayList<Email> inbox = new ArrayList<>();
+    private ArrayList<Email> sent = new ArrayList<>();
+
+    public void setInbox(ArrayList<Email> inbox) {
+        this.inbox = new ArrayList<>(inbox);
     }
+
+    public void addToInbox(Email email) {
+        inbox.add(email);
+        Collections.sort(inbox);
+    }
+
+    public void rmFromInbox(Email email) {
+        inbox.remove(email);
+    }
+
+    public ArrayList<Email> Inbox() {
+        return inbox;
+    }
+
+    public void setSent(ArrayList<Email> sent) {
+        this.sent = new ArrayList<>(sent);
+    }
+
+    public void addToSent(Email email) {
+        sent.add(email);
+    }
+
+    public void rmFromSent(Email email) {
+        sent.remove(email);
+    }
+
+    public ArrayList<Email> Sent() {
+        return sent;
+    }
+    //</editor-fold>
 
     //<editor-fold desc="List filter for showing the choosen mailbox">
     private final StringProperty listFilter = new SimpleStringProperty();
@@ -124,7 +161,18 @@ public class DataModel {
     }
     //</editor-fold>
 
-    //<editor-fold desc="">
+    //<editor-fold desc="Validation">
+    public Boolean checkMailAccount(String username) {
+        return Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE)
+                .matcher(username).find();
+    }
 
+
+    public boolean checkEmail() {
+        Boolean res = checkMailAccount(getCurrentEmail().getSender()); //sender
+        for(String item : getCurrentEmail().getRecipient())
+            res &= checkMailAccount(item);
+        return res;
+    }
     //</editor-fold>
 }
