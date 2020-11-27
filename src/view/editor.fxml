@@ -27,5 +27,6 @@
             <Button fx:id="btnNew" minWidth="46.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="151.0" text="New" />
          </buttons>
       </ButtonBar>
+      <Label fx:id="lblError" layoutX="26.0" layoutY="458.0" />
    </children>
 </AnchorPane>
