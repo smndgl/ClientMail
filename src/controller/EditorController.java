@@ -2,9 +2,11 @@ package controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import model.Connection;
 import model.DataModel;
 import model.Email;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -36,6 +38,9 @@ public class EditorController {
     private Button btnDelete;
     @FXML
     private Button btnNew;
+
+    @FXML
+    private Label lblError;
 
     private DataModel model;
 
@@ -75,7 +80,7 @@ public class EditorController {
         //<editor-fold desc="Reply - ReplyAll - Forward">
         btnReply.setOnAction(actionEvent -> {
             model.setCurrentEmail(new Email(
-                    model.getLastEmaild(),
+                    model.getNextEmaild(),
                     model.getUsername(),
                     new ArrayList<String>(Arrays.asList(model.getCurrentEmail().getSender().split(" "))),
                     "RE: "+ model.getCurrentEmail().getSubject(),
@@ -94,7 +99,7 @@ public class EditorController {
                     newRecipients.add(item);
             };
             model.setCurrentEmail(new Email(
-                    model.getLastEmaild(),
+                    model.getNextEmaild(),
                     model.getUsername(),
                     newRecipients,
                     "RE: "+ model.getCurrentEmail().getSubject(),
@@ -107,7 +112,7 @@ public class EditorController {
 
         btnForward.setOnAction(actionEvent -> {
             model.setCurrentEmail(new Email(
-                    model.getLastEmaild(),
+                    model.getNextEmaild(),
                     model.getUsername(),
                     new ArrayList<String>(),
                     "FW: "+ model.getCurrentEmail().getSubject(),
@@ -122,7 +127,7 @@ public class EditorController {
         //<editor-fold desc="New - Delete - Send">
         btnNew.setOnAction(actionEvent -> {
             model.setCurrentEmail(new Email(
-                    model.getLastEmaild(),
+                    model.getNextEmaild(),
                     model.getUsername(),
                     new ArrayList<String>(),
                     "",
@@ -135,15 +140,50 @@ public class EditorController {
 
         //sure about it
         btnDelete.setOnAction(actionEvent -> {
-            // TODO mandare al server messaggio tipo delete
+            Email email = model.getCurrentEmail();
+            String mailbox = "";
+            if(model.getCurrentEmail().getSender().equals(model.getUsername())) { // sender == username logged
+                model.rmFromSent(email);
+                mailbox = "sent";
+            }
+            else { // inbox
+                model.rmFromInbox(email);
+                mailbox = "inbox";
+            }
+            model.getMailList().remove(email);
+            // now server stuffs
+            Connection connection = model.getConnectionInstance();
+            try {
+                connection.delete(email, mailbox);
+            }
+            catch (IOException e) {
+                System.err.println("Error on delete: "+e.getMessage());
+            }
+
+            btnNew.fire(); //clear fields
+            model.setListFilter(mailbox);
         });
 
         btnSend.setOnAction(actionEvent -> {
-            /* TODO
-                * controllo campi
-                * inserisco id per sentlist del mittente
-                * creo messaggio e mando al socket
-            */
+            if(model.checkEmail()) {
+                model.getCurrentEmail().setRecipient(new ArrayList<String>(Arrays.asList(txtRecipients.getText().split(","))));
+                model.getCurrentEmail().setSubject(txtSubject.getText());
+                model.getCurrentEmail().setText(txtAreaMailText.getText());
+                model.getCurrentEmail().setMailingDate(new Date());
+                Connection connection = model.getConnectionInstance();
+                try {
+                    connection.send(model.getCurrentEmail());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                model.incrementNextEmailId(); //impoooo
+                model.addToSent(model.getCurrentEmail());
+                model.setListFilter("sent");
+                btnNew.fire();
+            }
+            else {
+                lblError.setText("ERROR! cannot valdiate emails");
+            }
         });
 
         //</editor-fold>
