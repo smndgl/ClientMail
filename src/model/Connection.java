@@ -1,5 +1,8 @@
 package model;
 
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -23,27 +26,19 @@ public class Connection {
 
             objectOut = new ObjectOutputStream(socket.getOutputStream());
             objectIn = new ObjectInputStream(socket.getInputStream());
-        } catch (ConnectException e) {
-            System.err.println("Cannot connect: "+ e.getMessage()); // looop
+        } catch (SocketException e) {
+            System.err.println("cannot connect "+ e.getMessage());
         }
     }
 
     public boolean isConnected() {
         boolean connected = (socket != null) && (socket.isConnected()) && !(socket.isClosed());
-        while(!connected) {
-            try {
-                this.connect();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
         System.out.println("Connection status : "+ connected);
-
         return connected;
     }
 
     public void close() {
-        System.out.println("Closing client");
+        System.out.println("Closing connection");
         try {
             if (objectOut != null) objectOut.close();
             if (objectIn != null) objectIn.close();
@@ -105,6 +100,12 @@ public class Connection {
                 objectOut.writeObject(new Message<>(MessageType.delete_s, email));
             else
                 System.err.println("HOW ?!");
+        }
+    }
+
+    public void reconnect(String username) throws IOException { //same as login but different type for not let server send back confirmation of username
+        if(this.isConnected()) {
+            objectOut.writeObject(new Message<>(MessageType.reconnect, username));
         }
     }
 }

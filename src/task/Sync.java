@@ -12,13 +12,20 @@ import model.Message;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Collection;
 
 public class Sync implements Runnable{
-    private final Connection connection;
+    private Connection connection;
     private final DataModel model;
     private Boolean interrupted = false;
+    private Boolean reconnect = false;
+
+    public Sync() {
+        this.model = null;
+        this.connection = null;
+    }
 
     public Sync(DataModel model) {
         this.model = model;
@@ -61,26 +68,41 @@ public class Sync implements Runnable{
     public void run() {
         while(!interrupted) {
             try {
-                Message m = connection.getMessage();
-                Email email = (Email) m.getContent();
-                Platform.runLater(() -> {
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                    alert.setTitle("New email");
-                    alert.setHeaderText(null);
-                    alert.setContentText("You received a new mail");
-                    alert.showAndWait();
-                });
-                if(email != null) {
-                    model.addToInbox(email);
-                    model.setMailList(model.Inbox());
+                if(reconnect) {
+                    Thread.sleep(4000);
+                    System.out.println("try to reconnect");
+                    model.getConnectionInstance().connect();
+                    if(model.getConnectionInstance().isConnected()) { // prolemi di istanze
+                        this.reconnect = false;
+                        this.connection = model.getConnectionInstance();
+                        connection.reconnect(model.getUsername()); //sequenza d'avvio
+                        this.fetchAll();
+                    }
+                }
+                else {
+                    Message m = connection.getMessage();
+                    Email email = (Email) m.getContent();
+                    Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle(model.getUsername() + " - new email");
+                        alert.setHeaderText(null);
+                        alert.setContentText("You received a new mail");
+                        alert.showAndWait();
+                    });
+                    if (email != null) {
+                        model.addToInbox(email);
+                        model.setListFilter("");
+                    }
                 }
             }
-            catch (ClassCastException e) {
+            catch (ClassCastException | InterruptedException e) {
                 System.err.println(Thread.currentThread().getName()+" Error: "+ e.getMessage());
             }
             catch(NullPointerException e) {
                 System.out.println("Socket chiusa");
-                this.setInterrupted(true);
+                this.reconnect = true;
+            } catch (IOException e) {
+                System.out.println("CANNOT CONNECT : "+ e.getMessage());
             }
         }
     }

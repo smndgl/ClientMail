@@ -31,9 +31,8 @@ public class Main extends Application {
         // TODO creare custom dialog
         String username;
 
-        model.initConnection(); // TODO SI INLOOOOOOPPPPAAAA
-        Sync sync = new Sync(model);
         Boolean res = true;
+        Sync sync = new Sync();
         do {
             do {
                 System.out.println("Choose username: ");
@@ -42,6 +41,16 @@ public class Main extends Application {
             } while (!model.checkMailAccount(username));
 
             model.setUsername(username);
+
+            Scene scene = new Scene(root, 800, 600);
+            primaryStage.setWidth(895);
+            primaryStage.setHeight(565);
+            primaryStage.setScene(scene);
+            primaryStage.show();
+
+            model.initConnection(); // TODO SI INLOOOOOOPPPPAAAA
+            sync = new Sync(model);
+
             try {
                 model.getConnectionInstance().login(model.getUsername());
                 Message obj = model.getConnectionInstance().getMessage();
@@ -50,6 +59,7 @@ public class Main extends Application {
                     if (res) {
                         primaryStage.setTitle(username);
                         model.setUsername(username);
+
                         sync.fetchAll();
                         new Thread(sync).start();
                     }
@@ -61,10 +71,13 @@ public class Main extends Application {
                 e.printStackTrace();
             } // ask for inbox and sent
         } while (!res); //eheheh
+
+        Sync finalSync = sync;
         primaryStage.setOnCloseRequest(windowEvent -> {
-            sync.setInterrupted(true); //stop polling request for new emails
+            finalSync.setInterrupted(true); //stop polling request for new emails
             try {
-                model.getConnectionInstance().logout(model.getUsername());
+                if(model.getConnectionInstance().isConnected())
+                    model.getConnectionInstance().logout(model.getUsername());
             } catch (IOException e) {
                 System.err.println("Error on closing event: "+ e.getMessage());
             }
@@ -74,12 +87,6 @@ public class Main extends Application {
         menuController.initModel(model);
 
         primaryStage.setTitle(username);
-
-        Scene scene = new Scene(root, 800, 600);
-        primaryStage.setWidth(895);
-        primaryStage.setHeight(565);
-        primaryStage.setScene(scene);
-        primaryStage.show();
     }
 
 

@@ -7,5 +7,6 @@ public enum  MessageType {
     sync,
     login,
     logout,
-    fetch
+    fetch,
+    reconnect
 }

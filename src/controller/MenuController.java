@@ -1,5 +1,8 @@
 package controller;
 
+import com.sun.javafx.beans.event.AbstractNotifyListener;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.ListChangeListener;
 import javafx.event.Event;
@@ -69,7 +72,6 @@ public class MenuController {
 
         columnSender.setCellValueFactory(new PropertyValueFactory<String, String>("sender"));
 
-        // choosen mailbox set { inbox, sent }
         model.listFilterProperty().addListener((obs, oldFilter, newFilter) -> {
             if(newFilter.equals(INBOX_FILTER)) {
                 model.setMailList(model.Inbox());
@@ -77,22 +79,25 @@ public class MenuController {
             else if(newFilter.equals(SENT_FILTER)) {
                 model.setMailList(model.Sent());
             }
-            else {
-                System.out.println("HOW ?!");
+            else { // refreshh
+                model.setListFilter(menuBtnMailBox.getText());
             }
             //setto ultimo id
-            model.setNextEmailId(model.getMailList().get(model.getMailList().size()-1).getId());
+            if(model.getMailList().size() > 0)
+                model.setNextEmailId(model.getMailList().get(model.getMailList().size()-1).getId());
+            else
+                model.setNextEmailId(1);
+
             tableViewMails.setItems(model.getMailList());
-            tableViewMails.getSelectionModel().selectFirst();
         });
 
         menuItemInbox.setOnAction(actionEvent -> {
-            menuBtnMailBox.setText("Inbox");
+            menuBtnMailBox.setText(INBOX_FILTER);
             model.setListFilter(INBOX_FILTER);
         });
 
         menuItemSent.setOnAction(actionEvent -> {
-            menuBtnMailBox.setText("Sent");
+            menuBtnMailBox.setText(SENT_FILTER);
             model.setListFilter(SENT_FILTER);
         });
 
@@ -102,10 +107,11 @@ public class MenuController {
         });
 
         // re-select email when already highlighted
+        /*
         tableViewMails.focusedProperty().addListener((obs, oldSel, newSel) -> {
             model.setCurrentEmail(tableViewMails.getSelectionModel().getSelectedItem());
         });
-
+        */
         model.getMailList().addListener((ListChangeListener<Email>) change -> {
             tableViewMails.setItems(model.getMailList());
         });

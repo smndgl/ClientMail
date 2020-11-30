@@ -79,44 +79,56 @@ public class EditorController {
 
         //<editor-fold desc="Reply - ReplyAll - Forward">
         btnReply.setOnAction(actionEvent -> {
-            model.setCurrentEmail(new Email(
-                    model.getNextEmaild(),
-                    model.getUsername(),
-                    new ArrayList<String>(Arrays.asList(model.getCurrentEmail().getSender().split(" "))),
-                    "RE: "+ model.getCurrentEmail().getSubject(),
-                    "",
-                    new Date()
-            ));
-            controlsOn();
-            buttonsOff();
+            if(model.getListFilter().equals("inbox")) {
+                model.setCurrentEmail(new Email(
+                        model.getNextEmaild(),
+                        model.getUsername(),
+                        new ArrayList<String>(Arrays.asList(model.getCurrentEmail().getSender().split(" "))),
+                        "RE: " + model.getCurrentEmail().getSubject(),
+                        "",
+                        new Date()
+                ));
+                controlsOn();
+                buttonsOff();
+            }
+            else {
+                lblError.setText("non puoi risponderti da solo genio");
+            }
         });
 
         btnReplyAll.setOnAction(actionEvent -> {
-            ArrayList<String> newRecipients = new ArrayList<>();
-            newRecipients.add(model.getCurrentEmail().getSender());
-            for (String item : model.getCurrentEmail().getRecipient()) {
-                if(!(item.equals(model.getUsername())))
-                    newRecipients.add(item);
-            };
-            model.setCurrentEmail(new Email(
-                    model.getNextEmaild(),
-                    model.getUsername(),
-                    newRecipients,
-                    "RE: "+ model.getCurrentEmail().getSubject(),
-                    "",
-                    new Date()
-            ));
-            controlsOn();
-            buttonsOff();
+            if(model.getListFilter().equals("inbox")) {
+                ArrayList<String> newRecipients = new ArrayList<>();
+                newRecipients.add(model.getCurrentEmail().getSender());
+                for (String item : model.getCurrentEmail().getRecipient()) {
+                    if (!(item.equals(model.getUsername())))
+                        newRecipients.add(item);
+                }
+                ;
+                model.setCurrentEmail(new Email(
+                        model.getNextEmaild(),
+                        model.getUsername(),
+                        newRecipients,
+                        "RE: " + model.getCurrentEmail().getSubject(),
+                        "",
+                        new Date()
+                ));
+                controlsOn();
+                buttonsOff();
+            }
+            else {
+                lblError.setText("non puoi risponderti da solo genio");
+            }
         });
 
         btnForward.setOnAction(actionEvent -> {
+            lblError.setText("");
             model.setCurrentEmail(new Email(
                     model.getNextEmaild(),
                     model.getUsername(),
                     new ArrayList<String>(),
                     "FW: "+ model.getCurrentEmail().getSubject(),
-                    model.getCurrentEmail().getText(),
+                    model.getCurrentEmail().getText() + "\nThis message was originally sent from"+model.getCurrentEmail().getSender(),
                     new Date()
             ));
             controlsOn();
@@ -126,6 +138,7 @@ public class EditorController {
 
         //<editor-fold desc="New - Delete - Send">
         btnNew.setOnAction(actionEvent -> {
+            lblError.setText("");
             model.setCurrentEmail(new Email(
                     model.getNextEmaild(),
                     model.getUsername(),
@@ -140,6 +153,7 @@ public class EditorController {
 
         //sure about it
         btnDelete.setOnAction(actionEvent -> {
+            lblError.setText("");
             Email email = model.getCurrentEmail();
             String mailbox = "";
             if(model.getCurrentEmail().getSender().equals(model.getUsername())) { // sender == username logged
@@ -166,7 +180,7 @@ public class EditorController {
 
         btnSend.setOnAction(actionEvent -> {
             if(model.checkEmail()) {
-                model.getCurrentEmail().setRecipient(new ArrayList<String>(Arrays.asList(txtRecipients.getText().split(","))));
+                model.getCurrentEmail().setRecipient(new ArrayList<String>(Arrays.asList(txtRecipients.getText().trim().split(","))));
                 model.getCurrentEmail().setSubject(txtSubject.getText());
                 model.getCurrentEmail().setText(txtAreaMailText.getText());
                 model.getCurrentEmail().setMailingDate(new Date());
@@ -182,7 +196,7 @@ public class EditorController {
                 btnNew.fire();
             }
             else {
-                lblError.setText("ERROR! cannot valdiate emails");
+                lblError.setText("ERROR! cannot validate emails");
             }
         });
 

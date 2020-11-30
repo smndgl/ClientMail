@@ -45,10 +45,7 @@ public class DataModel {
     }
 
     public Connection getConnectionInstance() {
-        if(connection.isConnected())
-            return connection;
-        else
-            return null;
+        return connection;
     }
     //</editor-fold>
 
@@ -95,6 +92,7 @@ public class DataModel {
 
     public void addToSent(Email email) {
         sent.add(email);
+        Collections.sort(inbox);
     }
 
     public void rmFromSent(Email email) {
