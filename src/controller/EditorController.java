@@ -167,15 +167,20 @@ public class EditorController {
             model.getMailList().remove(email);
             // now server stuffs
             Connection connection = model.getConnectionInstance();
-            try {
-                connection.delete(email, mailbox);
-            }
-            catch (IOException e) {
-                System.err.println("Error on delete: "+e.getMessage());
-            }
+            if(connection.isConnected()) {
 
-            btnNew.fire(); //clear fields
-            model.setListFilter(mailbox);
+                try {
+                    connection.delete(email, mailbox);
+                }
+                catch (IOException e) {
+                    System.err.println("Error on delete: "+e.getMessage());
+                }
+                btnNew.fire(); //clear fields
+                model.setListFilter(mailbox);
+            }
+            else {
+                lblError.setText("ERROR! Connection w/ server is down. Retry later");
+            }
         });
 
         btnSend.setOnAction(actionEvent -> {
@@ -185,15 +190,20 @@ public class EditorController {
                 model.getCurrentEmail().setText(txtAreaMailText.getText());
                 model.getCurrentEmail().setMailingDate(new Date());
                 Connection connection = model.getConnectionInstance();
-                try {
-                    connection.send(model.getCurrentEmail());
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if(connection.isConnected()) {
+                    try {
+                        connection.send(model.getCurrentEmail());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    model.incrementNextEmailId(); //impoooo
+                    model.addToSent(model.getCurrentEmail());
+                    model.setListFilter("sent");
+                    btnNew.fire();
                 }
-                model.incrementNextEmailId(); //impoooo
-                model.addToSent(model.getCurrentEmail());
-                model.setListFilter("sent");
-                btnNew.fire();
+                else {
+                    lblError.setText("ERROR! Connection w/ server is down. Retry later");
+                }
             }
             else {
                 lblError.setText("ERROR! cannot validate emails");

@@ -74,9 +74,11 @@ public class MenuController {
 
         model.listFilterProperty().addListener((obs, oldFilter, newFilter) -> {
             if(newFilter.equals(INBOX_FILTER)) {
+                menuBtnMailBox.setText(INBOX_FILTER);
                 model.setMailList(model.Inbox());
             }
             else if(newFilter.equals(SENT_FILTER)) {
+                menuBtnMailBox.setText(SENT_FILTER);
                 model.setMailList(model.Sent());
             }
             else { // refreshh
@@ -92,12 +94,10 @@ public class MenuController {
         });
 
         menuItemInbox.setOnAction(actionEvent -> {
-            menuBtnMailBox.setText(INBOX_FILTER);
             model.setListFilter(INBOX_FILTER);
         });
 
         menuItemSent.setOnAction(actionEvent -> {
-            menuBtnMailBox.setText(SENT_FILTER);
             model.setListFilter(SENT_FILTER);
         });
 

@@ -33,9 +33,8 @@ public class DataModel {
     private Connection connection;
 
     public void initConnection() {
-        if(connection != null )
-            throw new IllegalStateException("Connection can only be initialized once");
-        connection = new Connection();
+        if(connection == null)
+            connection = new Connection();
         try {
             connection.connect();
         }

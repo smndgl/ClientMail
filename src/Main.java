@@ -35,42 +35,46 @@ public class Main extends Application {
         Sync sync = new Sync();
         do {
             do {
-                System.out.println("Choose username: ");
+                System.out.println("Choose username or \"0\" to exit: ");
                 Scanner scanner = new Scanner(System.in);
                 username = scanner.nextLine();
+                if(username.equals("0")) {
+                    System.exit(0);
+                }
             } while (!model.checkMailAccount(username));
 
-            model.setUsername(username);
-
-            Scene scene = new Scene(root, 800, 600);
-            primaryStage.setWidth(895);
-            primaryStage.setHeight(565);
-            primaryStage.setScene(scene);
-            primaryStage.show();
-
-            model.initConnection(); // TODO SI INLOOOOOOPPPPAAAA
-            sync = new Sync(model);
-
             try {
-                model.getConnectionInstance().login(model.getUsername());
+                model.initConnection();
+                model.getConnectionInstance().login(username);
                 Message obj = model.getConnectionInstance().getMessage();
-                res = (Boolean) obj.getContent();
-                if (obj.getContent() instanceof Boolean) {
+                if(obj != null) {
+                    res = (Boolean) obj.getContent();
                     if (res) {
                         primaryStage.setTitle(username);
                         model.setUsername(username);
 
+                        sync = new Sync(model);
                         sync.fetchAll();
                         new Thread(sync).start();
-                    }
-                    else {
+                    } else {
                         System.out.println("Error invalid username");
                     }
                 }
+                else {
+                    res = false;
+                    System.out.println("Server is down, retry later");
+                }
+
             } catch (IOException e) {
                 e.printStackTrace();
             } // ask for inbox and sent
         } while (!res); //eheheh
+
+        Scene scene = new Scene(root, 800, 600);
+        primaryStage.setWidth(895);
+        primaryStage.setHeight(565);
+        primaryStage.setScene(scene);
+        primaryStage.show();
 
         Sync finalSync = sync;
         primaryStage.setOnCloseRequest(windowEvent -> {

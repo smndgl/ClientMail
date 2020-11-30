@@ -5,10 +5,7 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
-import model.Connection;
-import model.DataModel;
-import model.Email;
-import model.Message;
+import model.*;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -45,13 +42,15 @@ public class Sync implements Runnable{
 
     private ArrayList<Email> fetchMailboxes(String FILTER) {
         try {
-            connection.fetchMailbox(FILTER);
+            ArrayList<Email> res;
+             connection.fetchMailbox(FILTER);
             Message m = connection.getMessage();
             if(m.getContent() instanceof String) {
                 Type type = new TypeToken<Collection<Email>>(){}.getType();
-                return new Gson().fromJson((String)m.getContent(), type);
-                //set atomic int in menucontroller
-                //model.setLastEmailId(model.getMailList().get(model.getMailList().size()-1).getId());
+                res = new Gson().fromJson((String)m.getContent(), type);
+                if(res == null)
+                    res = new ArrayList<>();
+                return res;
             }
         }
         catch (IOException | JsonSyntaxException e) {
@@ -81,17 +80,33 @@ public class Sync implements Runnable{
                 }
                 else {
                     Message m = connection.getMessage();
-                    Email email = (Email) m.getContent();
-                    Platform.runLater(() -> {
-                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                        alert.setTitle(model.getUsername() + " - new email");
-                        alert.setHeaderText(null);
-                        alert.setContentText("You received a new mail");
-                        alert.showAndWait();
-                    });
-                    if (email != null) {
-                        model.addToInbox(email);
-                        model.setListFilter("");
+                    if(m.getType() == MessageType.sync) {
+                        Email email = (Email) m.getContent();
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setTitle(model.getUsername() + " - new email");
+                            alert.setHeaderText(null);
+                            alert.setContentText("You received a new mail");
+                            alert.showAndWait();
+                        });
+                        if (email != null) {
+                            model.addToInbox(email);
+                            model.setListFilter("");
+                        }
+                    }
+                    else if(m.getType() == MessageType.send) {
+                        String res = (String)m.getContent();
+
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setTitle(model.getUsername() + " - new email");
+                            alert.setHeaderText(null);
+                            if(res.equals(""))
+                                alert.setContentText("Email sent!");
+                            else
+                                alert.setContentText(res);
+                            alert.showAndWait();
+                        });
                     }
                 }
             }
