@@ -91,7 +91,7 @@ public class DataModel {
 
     public void addToSent(Email email) {
         sent.add(email);
-        Collections.sort(inbox);
+        Collections.sort(sent);
     }
 
     public void rmFromSent(Email email) {
@@ -123,6 +123,7 @@ public class DataModel {
     /*
      *  Properties
      */
+    /*
     private ObservableList<Email> mailList = FXCollections.observableArrayList(email ->
             new Observable[] {
                     new SimpleIntegerProperty(email.getId()),
@@ -132,6 +133,9 @@ public class DataModel {
                     new SimpleStringProperty(email.getText()),
                     new SimpleObjectProperty<>(email.getMailingDate())
     });
+     */
+
+    private ObservableList<Email> mailList = FXCollections.emptyObservableList();
 
     public void setMailList(ArrayList<Email> emails) {
         this.mailList = FXCollections.observableList(emails);
@@ -156,6 +160,19 @@ public class DataModel {
     public void setCurrentEmail(Email email) {
         currentEmailProperty().set(email);
     }
+
+
+    public final ObjectProperty<Email> sentEmail = new SimpleObjectProperty<>();
+
+    public ObjectProperty<Email> sentEmailProperty() {
+        return sentEmail;
+    }
+    public Email getSentEmail() {
+        return sentEmailProperty().get();
+    }
+    public void setSentEmail(Email email) {
+        sentEmailProperty().set(email);
+    }
     //</editor-fold>
 
     //<editor-fold desc="Validation">
@@ -166,9 +183,11 @@ public class DataModel {
 
 
     public boolean checkEmail() {
-        Boolean res = checkMailAccount(getCurrentEmail().getSender()); //sender
-        for(String item : getCurrentEmail().getRecipient())
-            res &= checkMailAccount(item);
+        Boolean res = true;
+        for(String item : getCurrentEmail().getRecipient()) {
+            System.out.println(item + "--> " +checkMailAccount(item));
+            res = res && checkMailAccount(item);
+        }
         return res;
     }
     //</editor-fold>

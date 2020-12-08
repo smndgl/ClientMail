@@ -99,12 +99,16 @@ public class Sync implements Runnable{
 
                         Platform.runLater(() -> {
                             Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                            alert.setTitle(model.getUsername() + " - new email");
+                            alert.setTitle(model.getUsername());
                             alert.setHeaderText(null);
-                            if(res.equals(""))
-                                alert.setContentText("Email sent!");
-                            else
+                            if(res.equals("Email sent")) {
+                                alert.setContentText("Email sent");
+                                model.setSentEmail(model.getCurrentEmail());
+                            }
+                            else {
+                                alert.setTitle(model.getUsername()+" - ERROR");
                                 alert.setContentText(res);
+                            }
                             alert.showAndWait();
                         });
                     }

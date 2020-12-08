@@ -3,6 +3,7 @@ package controller;
 import com.sun.javafx.beans.event.AbstractNotifyListener;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.ListChangeListener;
 import javafx.event.Event;
@@ -82,19 +83,20 @@ public class MenuController {
                 model.setMailList(model.Sent());
             }
             else { // refreshh
-                model.setListFilter(menuBtnMailBox.getText());
+                model.setListFilter(oldFilter);
             }
             //setto ultimo id
             if(model.getMailList().size() > 0)
                 model.setNextEmailId(model.getMailList().get(model.getMailList().size()-1).getId());
             else
-                model.setNextEmailId(1);
+                model.setNextEmailId(0);
 
             tableViewMails.setItems(model.getMailList());
         });
 
         menuItemInbox.setOnAction(actionEvent -> {
             model.setListFilter(INBOX_FILTER);
+
         });
 
         menuItemSent.setOnAction(actionEvent -> {
@@ -112,10 +114,6 @@ public class MenuController {
             model.setCurrentEmail(tableViewMails.getSelectionModel().getSelectedItem());
         });
         */
-        model.getMailList().addListener((ListChangeListener<Email>) change -> {
-            tableViewMails.setItems(model.getMailList());
-        });
-
         // inbox loaded as default mailbox when application starts
         menuItemInbox.fire();
 
